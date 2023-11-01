@@ -32,6 +32,7 @@ import com.github.tvbox.osc.ui.dialog.ChooseSourceDialog;
 import com.github.tvbox.osc.ui.dialog.SubsTipDialog;
 import com.github.tvbox.osc.ui.dialog.SubsciptionDialog;
 import com.github.tvbox.osc.util.HawkConfig;
+import com.github.tvbox.osc.util.Utils;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -42,6 +43,7 @@ import com.hjq.permissions.Permission;
 import com.hjq.permissions.XXPermissions;
 import com.lxj.xpopup.XPopup;
 import com.lxj.xpopup.enums.PopupPosition;
+import com.lxj.xpopup.interfaces.OnInputConfirmListener;
 import com.lzy.okgo.OkGo;
 import com.lzy.okgo.callback.AbsCallback;
 import com.lzy.okgo.model.Response;
@@ -171,14 +173,33 @@ public class SubscriptionActivity extends BaseVbActivity<ActivitySubscriptionBin
             new XPopup.Builder(this)
                     .atView(view.findViewById(R.id.tv_name))
                     .hasShadowBg(false)
-                    .asAttachList(new String[]{item.isTop() ? "取消置顶" : "置顶", "复制地址"}, null, (index, text) -> {
-                        if (index == 0) {
-                            item.setTop(!item.isTop());
-                            mSubscriptions.set(position, item);
-                            mSubscriptionAdapter.setNewData(mSubscriptions);
-                        } else {
-                            ClipboardUtils.copyText(mSubscriptions.get(position).getUrl());
-                            ToastUtils.showLong("已复制");
+                    .asAttachList(new String[]{item.isTop() ? "取消置顶" : "置顶", "重命名", "复制地址"}, null, (index, text) -> {
+                        switch (index) {
+                            case 0:
+                                item.setTop(!item.isTop());
+                                mSubscriptions.set(position, item);
+                                mSubscriptionAdapter.setNewData(mSubscriptions);
+                                break;
+                            case 1:
+                                new XPopup.Builder(this)
+                                        .asInputConfirm("更改为", "", item.getName(), "新的订阅名", new OnInputConfirmListener() {
+                                            @Override
+                                            public void onConfirm(String text) {
+                                                if (!TextUtils.isEmpty(text)){
+                                                    if (text.trim().length()>8){
+                                                        ToastUtils.showShort("不要过长,不方便记忆");
+                                                    }else {
+                                                        item.setName(text.trim());
+                                                        mSubscriptionAdapter.notifyItemChanged(position);
+                                                    }
+                                                }
+                                            }
+                                        }, null, R.layout.dialog_input).show();
+                                break;
+                            case 2:
+                                ClipboardUtils.copyText(mSubscriptions.get(position).getUrl());
+                                ToastUtils.showLong("已复制");
+                                break;
                         }
                     }).show();
             return true;
@@ -187,6 +208,7 @@ public class SubscriptionActivity extends BaseVbActivity<ActivitySubscriptionBin
 
     private void showPermissionTipPopup() {
         new XPopup.Builder(SubscriptionActivity.this)
+                .isDarkTheme(Utils.isDarkTheme())
                 .asConfirm("提示", "这将访问您设备文件的读取权限", () -> {
                     XXPermissions.with(this)
                             .permission(Permission.MANAGE_EXTERNAL_STORAGE)
