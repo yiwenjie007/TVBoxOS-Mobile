@@ -27,6 +27,7 @@ import com.github.tvbox.osc.bean.SourceBean;
 import com.github.tvbox.osc.databinding.FragmentHomeBinding;
 import com.github.tvbox.osc.server.ControlManager;
 
+import com.github.tvbox.osc.ui.activity.CollectActivity;
 import com.github.tvbox.osc.ui.activity.FastSearchActivity;
 import com.github.tvbox.osc.ui.activity.HistoryActivity;
 import com.github.tvbox.osc.ui.activity.MainActivity;
@@ -77,8 +78,9 @@ public class HomeFragment extends BaseVbFragment<FragmentHomeBinding> {
             return true;
         });
 
-        mBinding.ivSearch.setOnClickListener(view -> jumpActivity(FastSearchActivity.class));
+        mBinding.search.setOnClickListener(view -> jumpActivity(FastSearchActivity.class));
         mBinding.ivHistory.setOnClickListener(view -> jumpActivity(HistoryActivity.class));
+        mBinding.ivCollect.setOnClickListener(view -> jumpActivity(CollectActivity.class));
         setLoadSir(mBinding.contentLayout);
 
         initViewModel();
@@ -256,7 +258,7 @@ public class HomeFragment extends BaseVbFragment<FragmentHomeBinding> {
     }
 
     private void initViewPager(AbsSortXml absXml) {
-        if (mSortDataList.size() > 0) {
+        if (!mSortDataList.isEmpty()) {
             mBinding.tabLayout.removeAllViews();
             fragments.clear();
             for (MovieSort.SortData data : mSortDataList) {
@@ -271,6 +273,11 @@ public class HomeFragment extends BaseVbFragment<FragmentHomeBinding> {
                 } else {//来自源的分类
                     fragments.add(GridFragment.newInstance(data));
                 }
+            }
+
+            if (Hawk.get(HawkConfig.HOME_REC, 0) == 2){//关闭主页
+                mBinding.tabLayout.removeViewAt(0);
+                fragments.remove(0);
             }
 
             //重新渲染vp
@@ -294,9 +301,12 @@ public class HomeFragment extends BaseVbFragment<FragmentHomeBinding> {
     /**
      * 提供给主页返回操作
      */
-    public void scrollToFirstTab(){
+    public boolean scrollToFirstTab(){
         if (mBinding.tabLayout.getCurrentItemIndex()!=0){
             mBinding.mViewPager.setCurrentItem(0, false);
+            return true;
+        }else {
+            return false;
         }
     }
 
